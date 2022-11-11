@@ -1,0 +1,5 @@
+[web]
+123.456.789.0    ansible_connection=ssh  ansible_user=ec2-user
+
+[cicd]
+123.456.789.0  ansible_connection=ssh  ansible_user=ec2-user
