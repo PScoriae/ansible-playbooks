@@ -71,15 +71,12 @@
         name: docker
         enabled: true
         state: started
-    - name: Enable and start nginx service
-      systemd:
-        name: nginx
-        enabled: true
-        state: started
 
 - name: Install pnpm for cicd servers
   hosts: cicd
   become: true
+  vars:
+    node_install_path: /home/ec2-user/node-install.sh
   tasks:
     - name: Install c compilers
       yum:
@@ -87,13 +84,13 @@
           - gcc-c++
           - make
         state: present
-    - name: Get nvm
+    - name: Get node
       ansible.builtin.get_url:
         url: https://rpm.nodesource.com/setup_16.x
-        dest: ~/nvm-install.sh
+        dest: "{{ node_install_path }}"
         mode: "600"
-    - name: Install nvm
-      command: bash ~/nvm-install.sh
+    - name: Install node
+      command: bash {{ node_install_path }}
       changed_when: false
     - name: Install node
       yum:
@@ -137,39 +134,15 @@
   hosts: cicd
   become: true
   vars:
-    prometheus_filepath: ~/prometheus.yml
+    prometheus_filepath: /home/ec2-user/prometheus.yml
   tasks:
-    - name: Create empty prometheus.yml
-      file:
-        path: "{{ prometheus_filepath }}"
-        state: touch
-        mode: "400"
-    - name: Write content to prometheus.yml
-      ansible.builtin.blockinfile:
-        path: "{{ prometheus_filepath }}"
-        marker: # ANSIBLE MANAGED FILE
-        block: |
-          global:
-            scrape_interval:     15s # By default, scrape targets every 15 seconds.
+    - name: Create prometheus.yml
+      ansible.builtin.copy:
+        src: ../config-files/prometheus.yml
+        dest: "{{ prometheus_filepath }}"
+        mode: "444"
 
-            # Attach these labels to any time series or alerts when communicating with
-            # external systems (federation, remote storage, Alertmanager).
-            external_labels:
-              monitor: 'codelab-monitor'
-
-          # A scrape configuration containing exactly one endpoint to scrape:
-          # Here it's Prometheus itself.
-          scrape_configs:
-            # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-            - job_name: 'prometheus'
-
-              # Override the global default and scrape targets from this job every 5 seconds.
-              scrape_interval: 5s
-
-              static_configs:
-                - targets: ['localhost:9090']
-
-    - name: Install requests python package
+    - name: Install necessary python packages
       pip:
         name:
           - requests
@@ -182,6 +155,7 @@
         name: prometheus
         image: prom/prometheus
         state: started
+        restart: true
         pull: true
         restart_policy: always
         ports:
@@ -198,3 +172,31 @@
         restart_policy: always
         ports:
           - "8020:3000"
+
+- name: Configure Nginx Reverse Proxies for Jenkins, Prometheus and Grafana
+  hosts: cicd
+  become: true
+  tasks:
+    - name: Set Jenkins Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/jenkins.conf
+        dest: /etc/nginx/conf.d/jenkins.conf
+        mode: "400"
+
+    - name: Set Prometheus Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/prometheus.conf
+        dest: /etc/nginx/conf.d/prometheus.conf
+        mode: "400"
+
+    - name: Set Grafana Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/grafana.conf
+        dest: /etc/nginx/conf.d/grafana.conf
+        mode: "400"
+
+    - name: Enable and start nginx service
+      systemd:
+        name: nginx
+        enabled: true
+        state: restarted
