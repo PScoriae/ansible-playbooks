@@ -1,6 +1,6 @@
-- name: setup 2GB swapfile for all servers
+- name: Setup 2GB swapfile for all servers
   hosts: all
-  become: yes
+  become: true
   vars:
     swap_file_path: /swapfile
     swap_file_size_mb: 2000
@@ -25,15 +25,16 @@
       register: swapfile
       tags:
         - swap.file.mkswap
+      changed_when: false
 
     - name: Make swap file
-      command: "sudo mkswap {{ swap_file_path }}"
+      command: "mkswap {{ swap_file_path }}"
       when: swapfile.stdout.find('swap file') == -1
       tags:
         - swap.file.mkswap
 
     - name: Write swap entry in fstab
-      mount: name=none
+      ansible.posix.mount: name=none
         src={{ swap_file_path }}
         fstype=swap
         opts=sw
@@ -49,67 +50,74 @@
       tags:
         - swap.file.swapon
 
-- name: install packages for all servers
+- name: Install packages for all servers
   hosts: all
-  become: yes
+  become: true
   tasks:
-    - name: enable nginx in amazon-linux-extras
-      shell: amazon-linux-extras enable nginx1
+    - name: Enable nginx in amazon-linux-extras
+      command: amazon-linux-extras enable nginx1
       args:
         creates: /etc/nginx
-    - name: install list of packages
+    - name: Install list of packages
       yum:
         name:
           - nginx
           - docker
           - git
-        state: latest
+        state: present
 
-- name: install pnpm for cicd servers
+- name: Install pnpm for cicd servers
   hosts: cicd
-  become: yes
+  become: true
   tasks:
-    - name: install c compilers
+    - name: Install c compilers
       yum:
         name:
           - gcc-c++
           - make
-        state: latest
-    - name: get nvm
-      shell: curl -sL https://rpm.nodesource.com/setup_16.x | sudo -E bash -
-    - name: install node
+        state: present
+    - name: Get nvm
+      ansible.builtin.get_url:
+        url: https://rpm.nodesource.com/setup_16.x
+        dest: ~/nvm-install.sh
+        mode: "600"
+    - name: Install nvm
+      command: bash ~/nvm-install.sh
+      changed_when: false
+    - name: Install node
       yum:
         name: nodejs
-        state: latest
-    - name: install pnpm
+        state: present
+    - name: Install pnpm
       community.general.npm:
         name: pnpm
         global: true
-        state: latest
+        state: present
 
-- name: install and setup jenkins on cicd servers
+- name: Install and setup jenkins on cicd servers
   hosts: cicd
-  become: yes
+  become: true
   tasks:
-    - name: add jenkins repo
-      shell: wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-      args:
-        creates: /etc/yum/repos.d/jenkins.repo
-    - name: import key file from jenkins-ci to make installable
+    - name: Add jenkins repo
+      ansible.builtin.get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: "777"
+    - name: Import key file from jenkins-ci to make installable
       rpm_key:
         key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
         state: present
-    - name: install java 11
-      shell: amazon-linux-extras install java-openjdk11 -y
+    - name: Install java 11
+      command: amazon-linux-extras install java-openjdk11 -y
       args:
         creates: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-    - name: install jenkins
+    - name: Install jenkins
       yum:
         name:
           - jenkins
-        state: latest
-    - name: enable and start jenkins service
+        state: present
+    - name: Enable and start jenkins service
       systemd:
         name: jenkins
-        enabled: yes
+        enabled: true
         state: started
