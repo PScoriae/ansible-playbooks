@@ -130,6 +130,17 @@
         enabled: true
         state: started
 
+- name: Install Ansible on CICD servers
+  hosts: cicd
+  tasks:
+    - name: Install Ansible
+      pip:
+        name:
+          - ansible
+        extra_args: "--user"
+      vars:
+        ansible_python_interpreter: /usr/bin/python3.7
+
 - name: Bootstrap Monitoring services on CICD servers
   hosts: cicd
   become: true
@@ -155,7 +166,6 @@
         name: prometheus
         image: prom/prometheus
         state: started
-        restart: true
         pull: true
         restart_policy: always
         ports:
