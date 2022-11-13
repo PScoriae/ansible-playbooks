@@ -183,6 +183,20 @@
         ports:
           - "8020:3000"
 
+- name: Setup Docker registry
+  hosts: cicd
+  become: true
+  tasks:
+    - name: Run Docker registry
+      community.docker.docker_container:
+        name: registry
+        image: registry:2
+        state: started
+        pull: true
+        restart_policy: always
+        ports:
+          - "5000:5000"
+
 - name: Configure Nginx Reverse Proxies for Jenkins, Prometheus and Grafana
   hosts: cicd
   become: true
