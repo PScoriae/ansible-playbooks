@@ -50,7 +50,7 @@
       tags:
         - swap.file.swapon
 
-- name: Install packages for all servers
+- name: Bootstrap yum packages for all servers
   hosts: all
   become: true
   tasks:
@@ -61,10 +61,21 @@
     - name: Install list of packages
       yum:
         name:
+          - python-requests
           - nginx
           - docker
           - git
         state: present
+    - name: Enable and start docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+    - name: Enable and start nginx service
+      systemd:
+        name: nginx
+        enabled: true
+        state: started
 
 - name: Install pnpm for cicd servers
   hosts: cicd
@@ -121,3 +132,69 @@
         name: jenkins
         enabled: true
         state: started
+
+- name: Bootstrap Monitoring services on CICD servers
+  hosts: cicd
+  become: true
+  vars:
+    prometheus_filepath: ~/prometheus.yml
+  tasks:
+    - name: Create empty prometheus.yml
+      file:
+        path: "{{ prometheus_filepath }}"
+        state: touch
+        mode: "400"
+    - name: Write content to prometheus.yml
+      ansible.builtin.blockinfile:
+        path: "{{ prometheus_filepath }}"
+        marker: # ANSIBLE MANAGED FILE
+        block: |
+          global:
+            scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+            # Attach these labels to any time series or alerts when communicating with
+            # external systems (federation, remote storage, Alertmanager).
+            external_labels:
+              monitor: 'codelab-monitor'
+
+          # A scrape configuration containing exactly one endpoint to scrape:
+          # Here it's Prometheus itself.
+          scrape_configs:
+            # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+            - job_name: 'prometheus'
+
+              # Override the global default and scrape targets from this job every 5 seconds.
+              scrape_interval: 5s
+
+              static_configs:
+                - targets: ['localhost:9090']
+
+    - name: Install requests python package
+      pip:
+        name:
+          - requests
+          - docker
+      vars:
+        ansible_python_interpreter: /usr/bin/python3.7
+
+    - name: Start Prometheus Container
+      community.docker.docker_container:
+        name: prometheus
+        image: prom/prometheus
+        state: started
+        pull: true
+        restart_policy: always
+        ports:
+          - "8010:9090"
+        volumes:
+          - "{{ prometheus_filepath }}:/etc/prometheus/prometheus.yml"
+
+    - name: Start Grafana Container
+      community.docker.docker_container:
+        name: Grafana
+        image: grafana/grafana
+        state: started
+        pull: true
+        restart_policy: always
+        ports:
+          - "8020:3000"
