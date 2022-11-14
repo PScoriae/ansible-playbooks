@@ -212,35 +212,55 @@
   hosts: cicd
   become: true
   vars:
-    prometheus_filepath: /home/ec2-user/prometheus.yml
+    prometheus_filepath: /home/ec2-user/monitoring/prometheus.yml
   tasks:
+    - name: Create a monitoring directory if it does not exist
+      ansible.builtin.file:
+        path: /home/ec2-user/monitoring
+        state: directory
+        mode: "0755"
+
     - name: Create prometheus.yml
       ansible.builtin.copy:
         src: ../config-files/prometheus.yml
         dest: "{{ prometheus_filepath }}"
         mode: "444"
 
-    - name: Start Prometheus Container
-      community.docker.docker_container:
-        name: prometheus
-        image: prom/prometheus
-        state: started
-        pull: true
-        restart_policy: always
-        ports:
-          - "8010:9090"
-        volumes:
-          - "{{ prometheus_filepath }}:/etc/prometheus/prometheus.yml"
+    - name: Copy docker-compose.yml
+      ansible.builtin.copy:
+        src: ../config-files/cicd-server/docker-compose.yml
+        dest: /home/ec2-user/monitoring/docker-compose.yml
+        mode: "777"
 
-    - name: Start Grafana Container
-      community.docker.docker_container:
-        name: Grafana
-        image: grafana/grafana
-        state: started
+    - name: Pull and Deploy latest Docker Images
+      community.docker.docker_compose:
+        project_src: /home/ec2-user/monitoring
+        state: present
         pull: true
-        restart_policy: always
-        ports:
-          - "8020:3000"
+        project_name: monitoring
+
+- name: Bootstrap Monitoring services on Web servers
+  hosts: web
+  become: true
+  tasks:
+    - name: Create a monitoring directory if it does not exist
+      ansible.builtin.file:
+        path: /home/ec2-user/monitoring
+        state: directory
+        mode: "0755"
+
+    - name: Copy docker-compose.yml
+      ansible.builtin.copy:
+        src: ../config-files/web-server/docker-compose.yml
+        dest: /home/ec2-user/monitoring/docker-compose.yml
+        mode: "777"
+
+    - name: Pull and Deploy latest Docker Images
+      community.docker.docker_compose:
+        project_src: /home/ec2-user/monitoring
+        state: present
+        pull: true
+        project_name: monitoring
 
 - name: Setup Docker registry
   hosts: cicd

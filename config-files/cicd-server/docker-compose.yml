@@ -1,0 +1,55 @@
+version: '3.8'
+volumes:
+  grafana-data:
+    driver: local
+  prometheus-data:
+    driver: local
+
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - '8010:9090'
+    volumes:
+      - /home/ec2-user/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '8020:3000'
+    restart: always
+  
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    depends_on:
+      - prometheus
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: always
+    volumes:
+      - '/:/host:ro,rslave'
+
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:v0.46.0 # latest tag is not updated...
+  #   depends_on:
+  #     - prometheus
+  #   network_mode: host
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #   devices:
+  #     - /dev/kmsg
+  #   command:
+  #     - '-port=9110'
+  #   privileged: true
+  #   restart: always
