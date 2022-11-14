@@ -50,7 +50,7 @@
       tags:
         - swap.file.swapon
 
-- name: Bootstrap yum packages for all servers
+- name: Bootstrap packages for all servers
   hosts: all
   become: true
   tasks:
@@ -66,11 +66,61 @@
           - docker
           - git
         state: present
+    - name: Install necessary python packages
+      pip:
+        name:
+          - requests
+          - docker
+      vars:
+        ansible_python_interpreter: /usr/bin/python3.7
+    - name: Install docker-compose
+      ansible.builtin.get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: "555"
+    # - name: Make symbolic link for docker-compose
+    #   command: sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    #   changed_when: false
     - name: Enable and start docker service
       systemd:
         name: docker
         enabled: true
         state: started
+
+- name: Create volume for MongoDB for all servers
+  hosts: all
+  become: true
+  tasks:
+    - name: Make empty directory
+      ansible.builtin.file:
+        path: /PCPartsTool-volume
+        state: directory
+        mode: "777"
+
+- name: Add CICD server Docker insecure registry
+  hosts: all
+  become: true
+  tasks:
+    - name: Copy file over
+      ansible.builtin.copy:
+        src: ../config-files/daemon.json
+        dest: /etc/docker/daemon.json
+        mode: "444"
+
+- name: Copy .pem key over to CICD server
+  hosts: cicd
+  become: true
+  tasks:
+    - name: Copy config file over
+      ansible.builtin.copy:
+        src: ../config-files/ssh-config
+        dest: ~/.ssh/config
+        mode: "444"
+    - name: Copy key over
+      ansible.builtin.copy:
+        src: ../config-files/main-key.pem
+        dest: ~/.ssh/main-key.pem
+        mode: "600"
 
 - name: Install pnpm for cicd servers
   hosts: cicd
@@ -124,11 +174,28 @@
         name:
           - jenkins
         state: present
+    - name: Add a line to a file if the file does not exist, without passing regexp
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: "jenkins ALL=(ALL) NOPASSWD: ALL"
+        state: present
+        mode: "440"
     - name: Enable and start jenkins service
       systemd:
         name: jenkins
         enabled: true
         state: started
+
+- name: Install required libraries for Playwright testing
+  hosts: cicd
+  become: true
+  tasks:
+    - name: Install packages
+      yum:
+        name:
+          - libappindicator-gtk3
+          - liberation-fonts
+        state: present
 
 - name: Install Ansible on CICD servers
   hosts: cicd
@@ -152,14 +219,6 @@
         src: ../config-files/prometheus.yml
         dest: "{{ prometheus_filepath }}"
         mode: "444"
-
-    - name: Install necessary python packages
-      pip:
-        name:
-          - requests
-          - docker
-      vars:
-        ansible_python_interpreter: /usr/bin/python3.7
 
     - name: Start Prometheus Container
       community.docker.docker_container:
@@ -217,6 +276,22 @@
       ansible.builtin.copy:
         src: ../config-files/grafana.conf
         dest: /etc/nginx/conf.d/grafana.conf
+        mode: "400"
+
+    - name: Enable and start nginx service
+      systemd:
+        name: nginx
+        enabled: true
+        state: restarted
+
+- name: Configure Nginx Reverse Proxies for PCPartsTool
+  hosts: web
+  become: true
+  tasks:
+    - name: Set PCPartsTool Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/pcpartstool.conf
+        dest: /etc/nginx/conf.d/pcpartstool.conf
         mode: "400"
 
     - name: Enable and start nginx service
