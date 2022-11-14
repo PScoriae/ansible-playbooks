@@ -93,7 +93,7 @@
   tasks:
     - name: Make empty directory
       ansible.builtin.file:
-        path: /PCPartsTool-volume
+        path: /home/ec2-user/PCPartsTool-volume
         state: directory
         mode: "777"
 
