@@ -1,6 +1,6 @@
 <div align='center'>
 <p>
-  <a href="https://github.com/PScoriae/terraform-infra/blob/main/LICENSE.md">
+  <a href="https://github.com/PScoriae/ansible-ec2/blob/main/LICENSE.md">
     <img src="https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge">
   </a>
   <a href="https://linkedin.com/in/pierreccesario">
