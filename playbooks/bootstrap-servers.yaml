@@ -59,7 +59,7 @@
     #   args:
     #     creates: /etc/nginx
     - name: Install list of packages
-      yum:
+      ansible.builtin.dnf:
         name:
           - nginx
           - docker
@@ -130,7 +130,7 @@
   #   node_install_path: /home/ec2-user/node-install.sh
   tasks:
     # - name: Install c compilers
-    #   yum:
+    #   ansible.builtin.dnf:
     #     name:
     #       - gcc-c++
     #       - make
@@ -144,7 +144,7 @@
     #   command: bash {{ node_install_path }}
     #   changed_when: false
     # - name: Install node
-    #   yum:
+    #   ansible.builtin.dnf:
     #     name: nodejs
     #     state: present
     - name: Install pnpm
@@ -171,7 +171,7 @@
     #   args:
     #     creates: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
     # - name: Install jenkins
-    #   yum:
+    #   ansible.builtin.dn:
     #     name:
     #       - jenkins
     #     state: present
@@ -192,7 +192,7 @@
   become: true
   tasks:
     - name: Install packages
-      yum:
+      ansible.builtin.dn:
         name:
           - libappindicator-gtk3
           - liberation-fonts
