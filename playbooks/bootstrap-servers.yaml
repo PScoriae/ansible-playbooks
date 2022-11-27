@@ -173,12 +173,12 @@
 
 - name: Install Ansible on CICD servers
   hosts: cicd
+  become: true
   tasks:
     - name: Install Ansible
       pip:
         name:
           - ansible
-        extra_args: "--user"
       vars:
         ansible_python_interpreter: /usr/bin/python3.9
 
@@ -298,7 +298,8 @@
   hosts: all
   become: true
   tasks:
-    - ansible.builtin.lineinfile:
+    - name: Change SELINUX to permissive
+      ansible.builtin.lineinfile:
         path: /etc/selinux/config
         regexp: "^SELINUX="
         line: SELINUX=permissive
@@ -307,4 +308,5 @@
   hosts: all
   become: true
   tasks:
-    - ansible.builtin.reboot:
+    - name: Reboot server
+      ansible.builtin.reboot:
