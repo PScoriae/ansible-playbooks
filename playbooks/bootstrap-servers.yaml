@@ -57,6 +57,7 @@
     - name: Install list of packages
       ansible.builtin.dnf:
         name:
+          - nano
           - nginx
           - git
           - nodejs
