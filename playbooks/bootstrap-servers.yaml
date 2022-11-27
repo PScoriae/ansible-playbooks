@@ -54,30 +54,31 @@
   hosts: all
   become: true
   tasks:
-    - name: Enable nginx in amazon-linux-extras
-      command: amazon-linux-extras enable nginx1
-      args:
-        creates: /etc/nginx
+    # - name: Enable nginx in amazon-linux-extras
+    #   command: amazon-linux-extras enable nginx1
+    #   args:
+    #     creates: /etc/nginx
     - name: Install list of packages
       yum:
         name:
-          - python-requests
           - nginx
           - docker
           - git
+          - nodejs
+          - jenkins
         state: present
     - name: Install necessary python packages
       pip:
         name:
           - requests
           - docker
-      vars:
-        ansible_python_interpreter: /usr/bin/python3.7
-    - name: Install docker-compose
-      ansible.builtin.get_url:
-        url: https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64
-        dest: /usr/local/bin/docker-compose
-        mode: "555"
+      # vars:
+      #   ansible_python_interpreter: /usr/bin/python3.7
+    # - name: Install docker-compose
+    #   ansible.builtin.get_url:
+    #     url: https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64
+    #     dest: /usr/local/bin/docker-compose
+    #     mode: "555"
     # - name: Make symbolic link for docker-compose
     #   command: sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
     #   changed_when: false
@@ -125,55 +126,55 @@
 - name: Install pnpm for cicd servers
   hosts: cicd
   become: true
-  vars:
-    node_install_path: /home/ec2-user/node-install.sh
+  # vars:
+  #   node_install_path: /home/ec2-user/node-install.sh
   tasks:
-    - name: Install c compilers
-      yum:
-        name:
-          - gcc-c++
-          - make
-        state: present
-    - name: Get node
-      ansible.builtin.get_url:
-        url: https://rpm.nodesource.com/setup_16.x
-        dest: "{{ node_install_path }}"
-        mode: "600"
-    - name: Install node
-      command: bash {{ node_install_path }}
-      changed_when: false
-    - name: Install node
-      yum:
-        name: nodejs
-        state: present
+    # - name: Install c compilers
+    #   yum:
+    #     name:
+    #       - gcc-c++
+    #       - make
+    #     state: present
+    # - name: Get node
+    #   ansible.builtin.get_url:
+    #     url: https://rpm.nodesource.com/setup_16.x
+    #     dest: "{{ node_install_path }}"
+    #     mode: "600"
+    # - name: Install node
+    #   command: bash {{ node_install_path }}
+    #   changed_when: false
+    # - name: Install node
+    #   yum:
+    #     name: nodejs
+    #     state: present
     - name: Install pnpm
       community.general.npm:
         name: pnpm
         global: true
         state: present
 
-- name: Install and setup jenkins on cicd servers
+- name: Setup and configure Jenkins
   hosts: cicd
   become: true
   tasks:
-    - name: Add jenkins repo
-      ansible.builtin.get_url:
-        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        dest: /etc/yum.repos.d/jenkins.repo
-        mode: "777"
-    - name: Import key file from jenkins-ci to make installable
-      rpm_key:
-        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-        state: present
-    - name: Install java 11
-      command: amazon-linux-extras install java-openjdk11 -y
-      args:
-        creates: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-    - name: Install jenkins
-      yum:
-        name:
-          - jenkins
-        state: present
+    # - name: Add jenkins repo
+    #   ansible.builtin.get_url:
+    #     url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    #     dest: /etc/yum.repos.d/jenkins.repo
+    #     mode: "777"
+    # - name: Import key file from jenkins-ci to make installable
+    #   rpm_key:
+    #     key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    #     state: present
+    # - name: Install java 11
+    #   command: amazon-linux-extras install java-openjdk11 -y
+    #   args:
+    #     creates: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+    # - name: Install jenkins
+    #   yum:
+    #     name:
+    #       - jenkins
+    #     state: present
     - name: Add a line to a file if the file does not exist, without passing regexp
       ansible.builtin.lineinfile:
         path: /etc/sudoers
@@ -205,8 +206,8 @@
         name:
           - ansible
         extra_args: "--user"
-      vars:
-        ansible_python_interpreter: /usr/bin/python3.7
+      # vars:
+      #   ansible_python_interpreter: /usr/bin/python3.7
 
 - name: Bootstrap Monitoring services on CICD servers
   hosts: cicd
