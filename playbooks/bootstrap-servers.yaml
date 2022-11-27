@@ -292,3 +292,18 @@
         name: nginx
         enabled: true
         state: restarted
+
+- name: Ensure SELinux is set to enforcing mode
+  hosts: all
+  become: true
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: /etc/selinux/config
+        regexp: "^SELINUX="
+        line: SELINUX=permissive
+
+- name: Unconditionally reboot the machine with all defaults
+  hosts: all
+  become: true
+  tasks:
+    - ansible.builtin.reboot:
