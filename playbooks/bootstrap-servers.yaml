@@ -54,34 +54,40 @@
   hosts: all
   become: true
   tasks:
-    # - name: Enable nginx in amazon-linux-extras
-    #   command: amazon-linux-extras enable nginx1
-    #   args:
-    #     creates: /etc/nginx
     - name: Install list of packages
       ansible.builtin.dnf:
         name:
           - nginx
-          - docker
           - git
           - nodejs
-          - jenkins
+          - python3-pip
         state: present
     - name: Install necessary python packages
       pip:
         name:
           - requests
           - docker
-      # vars:
-      #   ansible_python_interpreter: /usr/bin/python3.7
-    # - name: Install docker-compose
-    #   ansible.builtin.get_url:
-    #     url: https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64
-    #     dest: /usr/local/bin/docker-compose
-    #     mode: "555"
-    # - name: Make symbolic link for docker-compose
-    #   command: sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-    #   changed_when: false
+          - docker-compose
+
+- name: Install Docker-CE
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dnf-utils
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: present
+    - name: Add DNF config
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      changed_when: false
+    - name: Install Docker and its deps
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
     - name: Enable and start docker service
       systemd:
         name: docker
@@ -126,27 +132,7 @@
 - name: Install pnpm for cicd servers
   hosts: cicd
   become: true
-  # vars:
-  #   node_install_path: /home/ec2-user/node-install.sh
   tasks:
-    # - name: Install c compilers
-    #   ansible.builtin.dnf:
-    #     name:
-    #       - gcc-c++
-    #       - make
-    #     state: present
-    # - name: Get node
-    #   ansible.builtin.get_url:
-    #     url: https://rpm.nodesource.com/setup_16.x
-    #     dest: "{{ node_install_path }}"
-    #     mode: "600"
-    # - name: Install node
-    #   command: bash {{ node_install_path }}
-    #   changed_when: false
-    # - name: Install node
-    #   ansible.builtin.dnf:
-    #     name: nodejs
-    #     state: present
     - name: Install pnpm
       community.general.npm:
         name: pnpm
@@ -157,24 +143,21 @@
   hosts: cicd
   become: true
   tasks:
-    # - name: Add jenkins repo
-    #   ansible.builtin.get_url:
-    #     url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-    #     dest: /etc/yum.repos.d/jenkins.repo
-    #     mode: "777"
-    # - name: Import key file from jenkins-ci to make installable
-    #   rpm_key:
-    #     key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-    #     state: present
-    # - name: Install java 11
-    #   command: amazon-linux-extras install java-openjdk11 -y
-    #   args:
-    #     creates: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-    # - name: Install jenkins
-    #   ansible.builtin.dn:
-    #     name:
-    #       - jenkins
-    #     state: present
+    - name: Add jenkins repo
+      ansible.builtin.get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: "777"
+    - name: Import key file from jenkins-ci to make installable
+      rpm_key:
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+        state: present
+    - name: Install jenkins and java
+      ansible.builtin.dnf:
+        name:
+          - jenkins
+          - java-11-openjdk
+        state: present
     - name: Add a line to a file if the file does not exist, without passing regexp
       ansible.builtin.lineinfile:
         path: /etc/sudoers
@@ -187,17 +170,6 @@
         enabled: true
         state: started
 
-- name: Install required libraries for Playwright testing
-  hosts: cicd
-  become: true
-  tasks:
-    - name: Install packages
-      ansible.builtin.dn:
-        name:
-          - libappindicator-gtk3
-          - liberation-fonts
-        state: present
-
 - name: Install Ansible on CICD servers
   hosts: cicd
   tasks:
@@ -206,8 +178,8 @@
         name:
           - ansible
         extra_args: "--user"
-      # vars:
-      #   ansible_python_interpreter: /usr/bin/python3.7
+      vars:
+        ansible_python_interpreter: /usr/bin/python3.9
 
 - name: Bootstrap Monitoring services on CICD servers
   hosts: cicd
