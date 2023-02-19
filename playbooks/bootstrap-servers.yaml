@@ -63,6 +63,7 @@
           - nodejs
           - python3-pip
           - wget
+          - unzip
         state: present
     - name: Install necessary python packages
       pip:
