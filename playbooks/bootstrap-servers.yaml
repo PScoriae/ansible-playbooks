@@ -101,7 +101,7 @@
   tasks:
     - name: Make empty directory
       ansible.builtin.file:
-        path: /home/ec2-user/PCPartsTool-volume
+        path: /home/rocky/shuttleday
         state: directory
         mode: "777"
 
@@ -213,28 +213,28 @@
         pull: true
         project_name: monitoring
 
-- name: Bootstrap Monitoring services on Web servers
-  hosts: web
-  become: true
-  tasks:
-    - name: Create a monitoring directory if it does not exist
-      ansible.builtin.file:
-        path: /home/ec2-user/monitoring
-        state: directory
-        mode: "0755"
+# - name: Bootstrap Monitoring services on Web servers
+#   hosts: web
+#   become: true
+#   tasks:
+#     - name: Create a monitoring directory if it does not exist
+#       ansible.builtin.file:
+#         path: /home/ec2-user/monitoring
+#         state: directory
+#         mode: "0755"
 
-    - name: Copy docker-compose.yml
-      ansible.builtin.copy:
-        src: ../config-files/web-server/docker-compose.yml
-        dest: /home/ec2-user/monitoring/docker-compose.yml
-        mode: "777"
+#     - name: Copy docker-compose.yml
+#       ansible.builtin.copy:
+#         src: ../config-files/web-server/docker-compose.yml
+#         dest: /home/ec2-user/monitoring/docker-compose.yml
+#         mode: "777"
 
-    - name: Pull and Deploy latest Docker Images
-      community.docker.docker_compose:
-        project_src: /home/ec2-user/monitoring
-        state: present
-        pull: true
-        project_name: monitoring
+#     - name: Pull and Deploy latest Docker Images
+#       community.docker.docker_compose:
+#         project_src: /home/ec2-user/monitoring
+#         state: present
+#         pull: true
+#         project_name: monitoring
 
 - name: Setup Docker registry
   hosts: cicd
@@ -278,21 +278,21 @@
         enabled: true
         state: restarted
 
-- name: Configure Nginx Reverse Proxies for PCPartsTool
-  hosts: web
-  become: true
-  tasks:
-    - name: Set PCPartsTool Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/pcpartstool.conf
-        dest: /etc/nginx/conf.d/pcpartstool.conf
-        mode: "400"
+# - name: Configure Nginx Reverse Proxies for PCPartsTool
+#   hosts: web
+#   become: true
+#   tasks:
+#     - name: Set PCPartsTool Reverse Proxy
+#       ansible.builtin.copy:
+#         src: ../config-files/pcpartstool.conf
+#         dest: /etc/nginx/conf.d/pcpartstool.conf
+#         mode: "400"
 
-    - name: Enable and start nginx service
-      systemd:
-        name: nginx
-        enabled: true
-        state: restarted
+#     - name: Enable and start nginx service
+#       systemd:
+#         name: nginx
+#         enabled: true
+#         state: restarted
 
 - name: Ensure SELinux is set to enforcing mode
   hosts: all
