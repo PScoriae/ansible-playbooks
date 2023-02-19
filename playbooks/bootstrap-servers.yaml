@@ -1,3 +1,7 @@
+# TODO
+# install hugo via prebuilt binaries
+# install aws cli
+
 - name: Setup 2GB swapfile for all servers
   hosts: all
   become: true
