@@ -11,7 +11,7 @@
   <img src="./docs/ansible.svg" width=300>
 </p>
 
-## PCPartsTool Ansible CaC
+## Ansible CaC
 
 </div>
 <details>
