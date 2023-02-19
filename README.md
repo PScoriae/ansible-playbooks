@@ -74,7 +74,7 @@ After installation, simply run the following commands from your root directory t
 
 ```bash
 # bootstrap new EC2 servers
-ansible-playbook playbooks/bootstrap-server.yaml
+ansible-playbook playbooks/bootstrap-servers.yaml
 
 # update all packages on EC2 servers
 ansible-playbook playbooks/yum-update.yaml
