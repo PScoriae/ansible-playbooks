@@ -256,7 +256,7 @@
         ports:
           - "5000:5000"
 
-- name: Configure Nginx Reverse Proxies for Jenkins, Prometheus and Grafana
+- name: Configure Nginx Reverse Proxies for Jenkins, Prometheus, Grafana and Shuttleday
   hosts: cicd
   become: true
   tasks:
@@ -276,6 +276,12 @@
       ansible.builtin.copy:
         src: ../config-files/grafana.conf
         dest: /etc/nginx/conf.d/grafana.conf
+        mode: "400"
+
+    - name: Set Shuttleday Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/shuttleday.conf
+        dest: /etc/nginx/conf.d/shuttleday.conf
         mode: "400"
 
     - name: Enable and start nginx service
