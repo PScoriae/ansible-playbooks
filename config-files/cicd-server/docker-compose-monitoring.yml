@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 volumes:
   grafana-data:
     driver: local
@@ -9,9 +9,9 @@ services:
   prometheus:
     image: prom/prometheus
     ports:
-      - '8010:9090'
+      - "8010:9090"
     volumes:
-      - /home/ec2-user/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /home/rocky/monitoring/:/etc/prometheus/
       - prometheus-data:/prometheus
     restart: always
 
@@ -22,19 +22,19 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
-      - '8020:3000'
+      - "8020:3000"
     restart: always
-  
+
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
     depends_on:
       - prometheus
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
     pid: host
     restart: always
     volumes:
-      - '/:/host:ro,rslave'
+      - "/:/host:ro,rslave"
 
   # cadvisor:
   #   image: gcr.io/cadvisor/cadvisor:v0.46.0 # latest tag is not updated...

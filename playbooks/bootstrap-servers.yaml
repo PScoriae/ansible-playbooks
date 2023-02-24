@@ -101,13 +101,18 @@
         enabled: true
         state: started
 
-- name: Create volume for MongoDB for all servers
+- name: Bind host folder as database volume for all servers
   hosts: all
   become: true
   tasks:
-    - name: Make empty directory
+    - name: MongoDB volume
       ansible.builtin.file:
         path: /home/rocky/shuttleday-volume
+        state: directory
+        mode: "777"
+    - name: Postgres volume
+      ansible.builtin.file:
+        path: /home/rocky/postgres-sq
         state: directory
         mode: "777"
 
@@ -188,15 +193,15 @@
       vars:
         ansible_python_interpreter: /usr/bin/python3.9
 
-- name: Bootstrap Monitoring services on CICD servers
+- name: Bootstrap monitoring services on CICD servers
   hosts: cicd
   become: true
   vars:
-    prometheus_filepath: /home/ec2-user/monitoring/prometheus.yml
+    prometheus_filepath: /home/rocky/monitoring/prometheus.yml
   tasks:
-    - name: Create a monitoring directory if it does not exist
+    - name: Create a directory if it does not exist
       ansible.builtin.file:
-        path: /home/ec2-user/monitoring
+        path: /home/rocky/monitoring
         state: directory
         mode: "0755"
 
@@ -208,16 +213,39 @@
 
     - name: Copy docker-compose.yml
       ansible.builtin.copy:
-        src: ../config-files/cicd-server/docker-compose.yml
-        dest: /home/ec2-user/monitoring/docker-compose.yml
+        src: ../config-files/cicd-server/docker-compose-monitoring.yml
+        dest: /home/rocky/monitoring/docker-compose.yml
         mode: "777"
 
     - name: Pull and Deploy latest Docker Images
       community.docker.docker_compose:
-        project_src: /home/ec2-user/monitoring
+        project_src: /home/rocky/monitoring
         state: present
         pull: true
         project_name: monitoring
+
+- name: Bootstrap Sonarqube on CICD server
+  hosts: cicd
+  become: true
+  tasks:
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /home/rocky/sonarqube
+        state: directory
+        mode: "0755"
+
+    - name: Copy docker-compose-.yml
+      ansible.builtin.copy:
+        src: ../config-files/cicd-server/docker-compose-sonarqube.yml
+        dest: /home/rocky/sonarqube/docker-compose.yml
+        mode: "777"
+
+    - name: Pull and Deploy latest Docker Images
+      community.docker.docker_compose:
+        project_src: /home/rocky/sonarqube
+        state: present
+        pull: true
+        project_name: sonarqube
 
 # - name: Bootstrap Monitoring services on Web servers
 #   hosts: web
@@ -225,19 +253,19 @@
 #   tasks:
 #     - name: Create a monitoring directory if it does not exist
 #       ansible.builtin.file:
-#         path: /home/ec2-user/monitoring
+#         path: /home/rocky/monitoring
 #         state: directory
 #         mode: "0755"
 
 #     - name: Copy docker-compose.yml
 #       ansible.builtin.copy:
 #         src: ../config-files/web-server/docker-compose.yml
-#         dest: /home/ec2-user/monitoring/docker-compose.yml
+#         dest: /home/rocky/monitoring/docker-compose.yml
 #         mode: "777"
 
 #     - name: Pull and Deploy latest Docker Images
 #       community.docker.docker_compose:
-#         project_src: /home/ec2-user/monitoring
+#         project_src: /home/rocky/monitoring
 #         state: present
 #         pull: true
 #         project_name: monitoring
@@ -256,7 +284,7 @@
         ports:
           - "5000:5000"
 
-- name: Configure Nginx Reverse Proxies for Jenkins, Prometheus, Grafana and Shuttleday
+- name: Configure Nginx Reverse Proxies
   hosts: cicd
   become: true
   tasks:
@@ -278,10 +306,16 @@
         dest: /etc/nginx/conf.d/grafana.conf
         mode: "400"
 
-    - name: Set Shuttleday Reverse Proxy
+    - name: Set Shuttleday API Reverse Proxy
       ansible.builtin.copy:
         src: ../config-files/shuttleday.conf
         dest: /etc/nginx/conf.d/shuttleday.conf
+        mode: "400"
+
+    - name: Set Sonarqube Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/sonarqube.conf
+        dest: /etc/nginx/conf.d/sonarqube.conf
         mode: "400"
 
     - name: Enable and start nginx service
