@@ -1,3 +1,4 @@
 *.yaml linguist-detectable
 *.yml linguist-detectable
+*.conf linguist-detectable
 *.conf linguist-language=Nginx
