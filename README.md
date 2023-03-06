@@ -1,10 +1,11 @@
 <div align='center'>
 <p>
-  <a href="https://github.com/PScoriae/ansible-ec2/blob/main/LICENSE.md">
-    <img src="https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge">
-  </a>
   <a href="https://linkedin.com/in/pierreccesario">
     <img src="https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555">
+  </a>
+
+  <a href="https://github.com/PScoriae/ansible-ec2/blob/main/LICENSE.md">
+        <img src="https://img.shields.io/badge/license-WTFPL-brightgreen?style=for-the-badge">
   </a>
 </p>
 <p>
@@ -28,7 +29,7 @@
 
 # About
 
-This repository is concerned with the configuration and bootstrapping of AWS EC2 instances for my perosnal projects using Ansible CaC.
+This repository is concerned with the configuration and bootstrapping of **AWS EC2 RHEL/CentOS/Rocky Linux** instances for my personal projects using Ansible CaC.
 
 Currently, this is what the bootstrap script `playbooks/bootstrap-servers.yaml` does:
 
