@@ -68,6 +68,7 @@
           - python3-pip
           - wget
           - unzip
+          - go
         state: present
     - name: Install necessary python packages
       pip:
