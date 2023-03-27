@@ -1,5 +1,5 @@
-[web]
+[workers]
 123.456.789.0    ansible_connection=ssh  ansible_user=ec2-user
 
-[cicd]
+[masters]
 123.456.789.0  ansible_connection=ssh  ansible_user=ec2-user

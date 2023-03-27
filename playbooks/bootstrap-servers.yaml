@@ -1,7 +1,3 @@
-# TODO
-# install hugo via prebuilt binaries
-# install aws cli
-
 - name: Setup 2GB swapfile for all servers
   hosts: all
   become: true
@@ -128,7 +124,7 @@
         mode: "444"
 
 - name: Copy .pem key over to CICD server
-  hosts: cicd
+  hosts: masters
   become: true
   tasks:
     - name: Copy config file over
@@ -142,8 +138,8 @@
         dest: ~/.ssh/main-key.pem
         mode: "600"
 
-- name: Install pnpm for cicd servers
-  hosts: cicd
+- name: Install pnpm for masters servers
+  hosts: masters
   become: true
   tasks:
     - name: Install pnpm
@@ -153,7 +149,7 @@
         state: present
 
 - name: Setup and configure Jenkins
-  hosts: cicd
+  hosts: masters
   become: true
   tasks:
     - name: Add jenkins repo
@@ -183,8 +179,8 @@
         enabled: true
         state: started
 
-- name: Install Ansible on CICD servers
-  hosts: cicd
+- name: Install Ansible on masters servers
+  hosts: masters
   become: true
   tasks:
     - name: Install Ansible
@@ -194,85 +190,8 @@
       vars:
         ansible_python_interpreter: /usr/bin/python3.9
 
-- name: Bootstrap monitoring services on CICD servers
-  hosts: cicd
-  become: true
-  vars:
-    prometheus_filepath: /home/rocky/monitoring/prometheus.yml
-  tasks:
-    - name: Create a directory if it does not exist
-      ansible.builtin.file:
-        path: /home/rocky/monitoring
-        state: directory
-        mode: "0755"
-
-    - name: Create prometheus.yml
-      ansible.builtin.copy:
-        src: ../config-files/prometheus.yml
-        dest: "{{ prometheus_filepath }}"
-        mode: "444"
-
-    - name: Copy docker-compose.yml
-      ansible.builtin.copy:
-        src: ../config-files/cicd-server/docker-compose-monitoring.yml
-        dest: /home/rocky/monitoring/docker-compose.yml
-        mode: "777"
-
-    - name: Pull and Deploy latest Docker Images
-      community.docker.docker_compose:
-        project_src: /home/rocky/monitoring
-        state: present
-        pull: true
-        project_name: monitoring
-
-# - name: Bootstrap Sonarqube on CICD server
-#   hosts: cicd
-#   become: true
-#   tasks:
-#     - name: Create a directory if it does not exist
-#       ansible.builtin.file:
-#         path: /home/rocky/sonarqube
-#         state: directory
-#         mode: "0755"
-
-#     - name: Copy docker-compose-.yml
-#       ansible.builtin.copy:
-#         src: ../config-files/cicd-server/docker-compose-sonarqube.yml
-#         dest: /home/rocky/sonarqube/docker-compose.yml
-#         mode: "777"
-
-#     - name: Pull and Deploy latest Docker Images
-#       community.docker.docker_compose:
-#         project_src: /home/rocky/sonarqube
-#         state: present
-#         pull: true
-#         project_name: sonarqube
-
-# - name: Bootstrap Monitoring services on Web servers
-#   hosts: web
-#   become: true
-#   tasks:
-#     - name: Create a monitoring directory if it does not exist
-#       ansible.builtin.file:
-#         path: /home/rocky/monitoring
-#         state: directory
-#         mode: "0755"
-
-#     - name: Copy docker-compose.yml
-#       ansible.builtin.copy:
-#         src: ../config-files/web-server/docker-compose.yml
-#         dest: /home/rocky/monitoring/docker-compose.yml
-#         mode: "777"
-
-#     - name: Pull and Deploy latest Docker Images
-#       community.docker.docker_compose:
-#         project_src: /home/rocky/monitoring
-#         state: present
-#         pull: true
-#         project_name: monitoring
-
-- name: Setup Docker registry
-  hosts: cicd
+- name: Setup Docker Registry
+  hosts: masters
   become: true
   tasks:
     - name: Run Docker registry
@@ -286,25 +205,13 @@
           - "5000:5000"
 
 - name: Configure Nginx Reverse Proxies
-  hosts: cicd
+  hosts: masters
   become: true
   tasks:
     - name: Set Jenkins Reverse Proxy
       ansible.builtin.copy:
         src: ../config-files/jenkins.conf
         dest: /etc/nginx/conf.d/jenkins.conf
-        mode: "400"
-
-    - name: Set Prometheus Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/prometheus.conf
-        dest: /etc/nginx/conf.d/prometheus.conf
-        mode: "400"
-
-    - name: Set Grafana Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/grafana.conf
-        dest: /etc/nginx/conf.d/grafana.conf
         mode: "400"
 
     - name: Set Shuttleday API Reverse Proxy
@@ -319,23 +226,7 @@
         enabled: true
         state: restarted
 
-# - name: Configure Nginx Reverse Proxies for PCPartsTool
-#   hosts: web
-#   become: true
-#   tasks:
-#     - name: Set PCPartsTool Reverse Proxy
-#       ansible.builtin.copy:
-#         src: ../config-files/pcpartstool.conf
-#         dest: /etc/nginx/conf.d/pcpartstool.conf
-#         mode: "400"
-
-#     - name: Enable and start nginx service
-#       systemd:
-#         name: nginx
-#         enabled: true
-#         state: restarted
-
-- name: Ensure SELinux is set to enforcing mode
+- name: Ensure SELinux is set to permissive mode
   hosts: all
   become: true
   tasks:
