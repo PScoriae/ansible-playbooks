@@ -225,28 +225,28 @@
         pull: true
         project_name: monitoring
 
-- name: Bootstrap Sonarqube on CICD server
-  hosts: cicd
-  become: true
-  tasks:
-    - name: Create a directory if it does not exist
-      ansible.builtin.file:
-        path: /home/rocky/sonarqube
-        state: directory
-        mode: "0755"
+# - name: Bootstrap Sonarqube on CICD server
+#   hosts: cicd
+#   become: true
+#   tasks:
+#     - name: Create a directory if it does not exist
+#       ansible.builtin.file:
+#         path: /home/rocky/sonarqube
+#         state: directory
+#         mode: "0755"
 
-    - name: Copy docker-compose-.yml
-      ansible.builtin.copy:
-        src: ../config-files/cicd-server/docker-compose-sonarqube.yml
-        dest: /home/rocky/sonarqube/docker-compose.yml
-        mode: "777"
+#     - name: Copy docker-compose-.yml
+#       ansible.builtin.copy:
+#         src: ../config-files/cicd-server/docker-compose-sonarqube.yml
+#         dest: /home/rocky/sonarqube/docker-compose.yml
+#         mode: "777"
 
-    - name: Pull and Deploy latest Docker Images
-      community.docker.docker_compose:
-        project_src: /home/rocky/sonarqube
-        state: present
-        pull: true
-        project_name: sonarqube
+#     - name: Pull and Deploy latest Docker Images
+#       community.docker.docker_compose:
+#         project_src: /home/rocky/sonarqube
+#         state: present
+#         pull: true
+#         project_name: sonarqube
 
 # - name: Bootstrap Monitoring services on Web servers
 #   hosts: web
@@ -311,12 +311,6 @@
       ansible.builtin.copy:
         src: ../config-files/shuttleday.conf
         dest: /etc/nginx/conf.d/shuttleday.conf
-        mode: "400"
-
-    - name: Set Sonarqube Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/sonarqube.conf
-        dest: /etc/nginx/conf.d/sonarqube.conf
         mode: "400"
 
     - name: Enable and start nginx service
