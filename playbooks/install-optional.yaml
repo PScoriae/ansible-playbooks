@@ -1,0 +1,31 @@
+- name: Install optional packages for all servers
+  hosts: all
+  become: true
+  tasks:
+    - name: Install list of packages
+      ansible.builtin.dnf:
+        name:
+          - nginx
+          - go
+        state: present
+
+- name: Install Ansible on masters servers
+  hosts: masters
+  become: true
+  tasks:
+    - name: Install Ansible
+      pip:
+        name:
+          - ansible
+      vars:
+        ansible_python_interpreter: /usr/bin/python3.9
+
+- name: Install pnpm for masters servers
+  hosts: masters
+  become: true
+  tasks:
+    - name: Install pnpm
+      community.general.npm:
+        name: pnpm
+        global: true
+        state: present

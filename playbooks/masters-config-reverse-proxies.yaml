@@ -1,0 +1,21 @@
+- name: Configure Nginx Reverse Proxies
+  hosts: masters
+  become: true
+  tasks:
+    - name: Set Jenkins Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/jenkins.conf
+        dest: /etc/nginx/conf.d/jenkins.conf
+        mode: "400"
+
+    - name: Set Shuttleday API Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/shuttleday.conf
+        dest: /etc/nginx/conf.d/shuttleday.conf
+        mode: "400"
+
+    - name: Enable and start nginx service
+      systemd:
+        name: nginx
+        enabled: true
+        state: restarted

@@ -1,0 +1,23 @@
+- name: Setup Docker Registry
+  hosts: masters
+  become: true
+  tasks:
+    - name: Run Docker registry
+      community.docker.docker_container:
+        name: registry
+        image: registry:2
+        state: started
+        pull: true
+        restart_policy: always
+        ports:
+          - "5000:5000"
+
+- name: Add CICD server Docker insecure registry
+  hosts: all
+  become: true
+  tasks:
+    - name: Copy file over
+      ansible.builtin.copy:
+        src: ../config-files/daemon.json
+        dest: /etc/docker/daemon.json
+        mode: "444"

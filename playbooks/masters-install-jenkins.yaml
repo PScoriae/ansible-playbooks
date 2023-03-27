@@ -1,0 +1,30 @@
+- name: Setup and configure Jenkins
+  hosts: masters
+  become: true
+  tasks:
+    - name: Add jenkins repo
+      ansible.builtin.get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: "777"
+    - name: Import key file from jenkins-ci to make installable
+      rpm_key:
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+        state: present
+    - name: Install jenkins and java
+      ansible.builtin.dnf:
+        name:
+          - jenkins
+          - java-11-openjdk
+        state: present
+    - name: Add a line to a file if the file does not exist, without passing regexp
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: "jenkins ALL=(ALL) NOPASSWD: ALL"
+        state: present
+        mode: "440"
+    - name: Enable and start jenkins service
+      systemd:
+        name: jenkins
+        enabled: true
+        state: started

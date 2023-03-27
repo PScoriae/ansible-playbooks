@@ -58,13 +58,11 @@
       ansible.builtin.dnf:
         name:
           - nano
-          - nginx
           - git
           - nodejs
           - python3-pip
           - wget
           - unzip
-          - go
         state: present
     - name: Install necessary python packages
       pip:
@@ -98,31 +96,6 @@
         enabled: true
         state: started
 
-- name: Bind host folder as database volume for all servers
-  hosts: all
-  become: true
-  tasks:
-    - name: MongoDB volume
-      ansible.builtin.file:
-        path: /home/rocky/shuttleday-volume
-        state: directory
-        mode: "777"
-    - name: Postgres volume
-      ansible.builtin.file:
-        path: /home/rocky/postgres-sq
-        state: directory
-        mode: "777"
-
-- name: Add CICD server Docker insecure registry
-  hosts: all
-  become: true
-  tasks:
-    - name: Copy file over
-      ansible.builtin.copy:
-        src: ../config-files/daemon.json
-        dest: /etc/docker/daemon.json
-        mode: "444"
-
 - name: Copy .pem key over to CICD server
   hosts: masters
   become: true
@@ -137,94 +110,6 @@
         src: ../config-files/main-key.pem
         dest: ~/.ssh/main-key.pem
         mode: "600"
-
-- name: Install pnpm for masters servers
-  hosts: masters
-  become: true
-  tasks:
-    - name: Install pnpm
-      community.general.npm:
-        name: pnpm
-        global: true
-        state: present
-
-- name: Setup and configure Jenkins
-  hosts: masters
-  become: true
-  tasks:
-    - name: Add jenkins repo
-      ansible.builtin.get_url:
-        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        dest: /etc/yum.repos.d/jenkins.repo
-        mode: "777"
-    - name: Import key file from jenkins-ci to make installable
-      rpm_key:
-        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-        state: present
-    - name: Install jenkins and java
-      ansible.builtin.dnf:
-        name:
-          - jenkins
-          - java-11-openjdk
-        state: present
-    - name: Add a line to a file if the file does not exist, without passing regexp
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers
-        line: "jenkins ALL=(ALL) NOPASSWD: ALL"
-        state: present
-        mode: "440"
-    - name: Enable and start jenkins service
-      systemd:
-        name: jenkins
-        enabled: true
-        state: started
-
-- name: Install Ansible on masters servers
-  hosts: masters
-  become: true
-  tasks:
-    - name: Install Ansible
-      pip:
-        name:
-          - ansible
-      vars:
-        ansible_python_interpreter: /usr/bin/python3.9
-
-- name: Setup Docker Registry
-  hosts: masters
-  become: true
-  tasks:
-    - name: Run Docker registry
-      community.docker.docker_container:
-        name: registry
-        image: registry:2
-        state: started
-        pull: true
-        restart_policy: always
-        ports:
-          - "5000:5000"
-
-- name: Configure Nginx Reverse Proxies
-  hosts: masters
-  become: true
-  tasks:
-    - name: Set Jenkins Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/jenkins.conf
-        dest: /etc/nginx/conf.d/jenkins.conf
-        mode: "400"
-
-    - name: Set Shuttleday API Reverse Proxy
-      ansible.builtin.copy:
-        src: ../config-files/shuttleday.conf
-        dest: /etc/nginx/conf.d/shuttleday.conf
-        mode: "400"
-
-    - name: Enable and start nginx service
-      systemd:
-        name: nginx
-        enabled: true
-        state: restarted
 
 - name: Ensure SELinux is set to permissive mode
   hosts: all
