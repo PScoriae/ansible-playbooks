@@ -1,5 +1,32 @@
-[workers]
-123.456.789.0    ansible_connection=ssh  ansible_user=ec2-user
+[masters:children]
+mastersAws
 
-[masters]
-123.456.789.0  ansible_connection=ssh  ansible_user=ec2-user
+[mastersAws]
+123.456.789.0 
+
+[mastersAws:vars]
+ansible_connection=ssh
+ansible_user=ec2-user
+ansible_ssh_private_key_file=~/.ssh/main-key.pem
+
+[workers:children]
+workersAws
+workersDo
+
+[workersAws]
+123.456.789.0  
+
+[workersAws:vars]
+ansible_connection=ssh
+ansible_user=ec2-user
+ansible_ssh_private_key_file=~/.ssh/main-key.pem
+
+[workersDo]
+123.456.789.0  
+123.456.789.0  
+123.456.789.0 
+
+[workersDo:vars]
+ansible_connection=ssh
+ansible_user=pie
+ansible_ssh_private_key_file=~/.ssh/id_rsa
