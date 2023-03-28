@@ -1,20 +1,49 @@
-- name: Bootstrap packages for all servers
+- name: Add package repositories
+  hosts: all
+  become: true
+  tasks:
+    - name: Set repo
+      ansible.builtin.copy:
+        src: ../config-files/kubernetes.repo
+        dest: /etc/yum.repos.d/kubernetes.repo
+        mode: "400"
+
+- name: Install kubeadm
   hosts: all
   become: true
   tasks:
     - name: Install list of packages
+      ansible.builtin.yum:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+        disable_excludes: kubernetes
+        state: present
+
+- name: Install containerd
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dnf-utils
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: present
+    - name: Add DNF config
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      changed_when: false
+    - name: Install containerd
       ansible.builtin.dnf:
         name:
-          - nano
-          - git
-          - nodejs
-          - python3-pip
-          - wget
-          - unzip
+          - containerd.io
         state: present
-    - name: Install necessary python packages
-      pip:
-        name:
-          - requests
-          - docker
-          - docker-compose
+
+- name: Enable and start kubelet service
+  hosts: all
+  become: true
+  tasks:
+    - name: Systemd enable and start service
+      ansible.builtin.systemd:
+        name: kubelet
+        state: started
+        enabled: true

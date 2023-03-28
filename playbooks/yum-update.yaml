@@ -1,8 +1,0 @@
-- name: Update packages on all servers
-  hosts: all
-  become: true
-  tasks:
-    - name: Update packages
-      yum:
-        name: "*"
-        state: present
