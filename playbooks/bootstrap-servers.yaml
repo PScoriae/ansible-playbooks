@@ -50,67 +50,6 @@
       tags:
         - swap.file.swapon
 
-- name: Bootstrap packages for all servers
-  hosts: all
-  become: true
-  tasks:
-    - name: Install list of packages
-      ansible.builtin.dnf:
-        name:
-          - nano
-          - git
-          - nodejs
-          - python3-pip
-          - wget
-          - unzip
-        state: present
-    - name: Install necessary python packages
-      pip:
-        name:
-          - requests
-          - docker
-          - docker-compose
-
-- name: Install Docker-CE
-  hosts: all
-  become: true
-  tasks:
-    - name: Install dnf-utils
-      ansible.builtin.dnf:
-        name: dnf-utils
-        state: present
-    - name: Add DNF config
-      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-      changed_when: false
-    - name: Install Docker and its deps
-      ansible.builtin.dnf:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: present
-    - name: Enable and start docker service
-      systemd:
-        name: docker
-        enabled: true
-        state: started
-
-- name: Copy .pem key over to CICD server
-  hosts: masters
-  become: true
-  tasks:
-    - name: Copy config file over
-      ansible.builtin.copy:
-        src: ../config-files/ssh-config
-        dest: ~/.ssh/config
-        mode: "444"
-    - name: Copy key over
-      ansible.builtin.copy:
-        src: ../config-files/main-key.pem
-        dest: ~/.ssh/main-key.pem
-        mode: "600"
-
 - name: Ensure SELinux is set to permissive mode
   hosts: all
   become: true
@@ -120,6 +59,16 @@
         path: /etc/selinux/config
         regexp: "^SELINUX="
         line: SELINUX=permissive
+
+- name: Create user for DO Droplets
+  hosts: workersDo
+  become: true
+  tasks:
+    - name: Create new user and add them to wheel group
+      ansible.builtin.user:
+        name: pie
+        comment: Default User
+        group: wheel
 
 - name: Unconditionally reboot the machine with all defaults
   hosts: all

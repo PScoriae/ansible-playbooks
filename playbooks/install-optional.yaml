@@ -29,3 +29,28 @@
         name: pnpm
         global: true
         state: present
+
+- name: Install Docker-CE
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dnf-utils
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: present
+    - name: Add DNF config
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      changed_when: false
+    - name: Install Docker and its deps
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+    - name: Enable and start docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started

@@ -1,0 +1,20 @@
+- name: Bootstrap packages for all servers
+  hosts: all
+  become: true
+  tasks:
+    - name: Install list of packages
+      ansible.builtin.dnf:
+        name:
+          - nano
+          - git
+          - nodejs
+          - python3-pip
+          - wget
+          - unzip
+        state: present
+    - name: Install necessary python packages
+      pip:
+        name:
+          - requests
+          - docker
+          - docker-compose
