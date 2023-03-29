@@ -1,14 +1,3 @@
-- name: Install optional packages for all servers
-  hosts: all
-  become: true
-  tasks:
-    - name: Install list of packages
-      ansible.builtin.dnf:
-        name:
-          - nginx
-          - go
-        state: present
-
 - name: Install Ansible on masters servers
   hosts: masters
   become: true

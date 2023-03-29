@@ -1,0 +1,9 @@
+- name: Install optional packages for all servers
+  hosts: masters
+  become: true
+  tasks:
+    - name: Install list of packages
+      ansible.builtin.dnf:
+        name:
+          - nginx
+        state: present
