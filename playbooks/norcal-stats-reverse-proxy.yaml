@@ -2,10 +2,10 @@
   hosts: norcal
   become: true
   tasks:
-    - name: Set Uptime Kuma Reverse Proxy
+    - name: Set Statping Reverse Proxy
       ansible.builtin.copy:
-        src: ../config-files/uptime-kuma.conf
-        dest: /etc/nginx/conf.d/uptime-kuma.conf
+        src: ../config-files/statping.conf
+        dest: /etc/nginx/conf.d/statping.conf
         mode: "400"
 
     - name: Enable and start nginx service
