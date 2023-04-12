@@ -5,15 +5,19 @@
     - name: Run Docker registry
       community.docker.docker_container:
         name: registry
-        image: registry:2
+        image: registry:latest
         state: started
         pull: true
         restart_policy: always
+        env:
+          REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+        volumes:
+          - ./data:/data
         ports:
           - "5000:5000"
 
 - name: Add CICD server Docker insecure registry
-  hosts: all
+  hosts: masters
   become: true
   tasks:
     - name: Copy file over
