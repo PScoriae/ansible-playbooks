@@ -8,23 +8,6 @@
         regexp: "^SELINUX="
         line: SELINUX=permissive
 
-- name: Create user for DO Droplets
-  hosts: workersDo
-  become: true
-  tasks:
-    - name: Create new user and add them to wheel group
-      ansible.builtin.user:
-        name: pie
-        comment: Default User
-        group: wheel
-
-- name: Let pie user execute sudo without password
-  ansible.builtin.lineinfile:
-    path: /etc/sudoers
-    line: "pie ALL=(ALL) NOPASSWD: ALL"
-    state: present
-    mode: "440"
-
 - name: Unconditionally reboot the machine with all defaults
   hosts: all
   become: true
