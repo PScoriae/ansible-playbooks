@@ -14,6 +14,12 @@
         dest: /etc/nginx/conf.d/shuttleday.conf
         mode: "400"
 
+    - name: Set Doccano Reverse Proxy
+      ansible.builtin.copy:
+        src: ../config-files/doccano.conf
+        dest: /etc/nginx/conf.d/doccano.conf
+        mode: "400"
+
     - name: Enable and start nginx service
       systemd:
         name: nginx
