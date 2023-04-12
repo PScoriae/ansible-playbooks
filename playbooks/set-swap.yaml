@@ -1,5 +1,5 @@
 - name: Setup 2GB swapfile for all servers
-  hosts: all
+  hosts: masters
   become: true
   vars:
     swap_file_path: /swapfile
